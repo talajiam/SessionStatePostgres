@@ -1,0 +1,15 @@
+﻿           CREATE TABLE ASPStateTempSessions (
+                SessionId           varchar(88)    NOT NULL PRIMARY KEY,
+                Created             timestamp      without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
+                Expires             timestamp        NOT NULL,
+                LockDate            timestamp        NOT NULL,
+                LockDateLocal       timestamp        NOT NULL,
+                LockCookie          int             NOT NULL,
+                Timeout             int             NOT NULL,
+                Locked              bit             NOT NULL,
+                SessionItemLong     BYTEA           NULL,
+                Flags               int             NOT NULL DEFAULT 0
+                ) 
+
+
+				INSERT ASPStateTempSessions (SessionId,SessionItemLong,Timeout,Expires,Locked,LockDate,LockDateLocal,LockCookie,Flags)VALUES(@SessionId,@SessionItemLong,@Timeout,@Expires,0,@LockDate,@LockDateLocal,1,1)
