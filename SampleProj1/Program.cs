@@ -55,15 +55,16 @@ namespace SampleProj1
             string id = "9888333";
 
             var itemtoInsert = new ToCheck1() { IntValue = 3, S1 = "My Check Value", booleanvalue = true, decValue = 3.90m, doubleValue = 8.409 };
-            //            InsertRecord(itemtoInsert);
-            UpdateAndRead();
+            //   InsertRecord(itemtoInsert);
+            // UpdateAndRead();
             //ReadRecord();
+            GetStateItemExclusiveSql_Query();
 
         }
 
         static ToCheck1 ReadRecord()
         {
-            NpgsqlConnection con = new NpgsqlConnection("Server = 127.0.0.1; User Id = postgres; Password=postgres;Database=sportswebtest;");
+            NpgsqlConnection con = new NpgsqlConnection("Server = 127.0.0.1; User Id = postgres; Password=postgres;Database=sportsweb;");
             con.Open();
             NpgsqlCommand cmd = new NpgsqlCommand("select * from aspstatetempsessions");
             cmd.Connection = con;
@@ -85,11 +86,11 @@ namespace SampleProj1
 
         public static void UpdateAndRead()
         {
-            NpgsqlConnection con = new NpgsqlConnection("Server = 127.0.0.1; User Id = postgres; Password=postgres;Database=sportswebtest;");
+            NpgsqlConnection con = new NpgsqlConnection("Server = 127.0.0.1; User Id = postgres; Password=postgres;Database=sportsweb;");
             con.Open();
             NpgsqlCommand cmd = new NpgsqlCommand("\r\n begin;" +
                                                   "\r\n UPDATE ASPStateTempSessions set timeout = 3     WHERE SessionId =  '" + SessionId1 + "';" +
-                                                  "\r\n select * from aspstatetempsessions  WHERE SessionId =  '" + SessionId1 + "';"+
+                                                  "\r\n select * from aspstatetempsessions  WHERE SessionId =  '" + SessionId1 + "';" +
                                                   "\r\n commit;");
             cmd.Connection = con;
 
@@ -106,9 +107,55 @@ namespace SampleProj1
         }
 
 
+        static void GetStateItemExclusiveSql_Query()
+        {
+            string updatelock = string.Format(" begin; \r\n " +
+                " UPDATE ASPStateTempSessions set Expires = :{1} + (Timeout || ' minutes') :: interval,\r\n " +
+             "   LockDate = CASE Locked WHEN 0 ::bit THEN :{1} ELSE LockDate  END,\r\n " +
+             " LockDateLocal = CASE Locked WHEN 0 ::bit THEN :{1} ELSE LockDateLocal END,\r\n " +
+             " LockCookie = CASE Locked WHEN 0 ::bit THEN LockCookie +1 ELSE LockCookie  END, \r\n " +
+             " Locked = 1 :: bit, Flags = CASE  WHEN(Flags & 1) <> 0 THEN(Flags & ~1)   ELSE Flags  END \r\n " +
+             " WHERE SessionId = :{0} ; \r\n " +
+             "  select* from ASPStateTempSessions WHERE SessionId = :{0} ; \r\n " +
+             " commit;  \r\n ", (object)SqlParameterName.SessionId,
+            (object)SqlParameterName.LockDate,
+            (object)SqlParameterName.LockDateLocal);
+
+            string updateNoLock = string.Format("  begin; \r\n " +
+           " UPDATE ASPStateTempSessions set Expires = :{1} + (Timeout || ' minutes') :: interval,  \r\n " +
+          "   Flags = CASE  WHEN(Flags & 1) <> 0 THEN(Flags & ~1)   ELSE Flags  END  \r\n " +
+        "  WHERE SessionId = :{0};  \r\n " +
+         "   select* from ASPStateTempSessions WHERE SessionId = :{0};  \r\n " +
+          "  commit;  \r\n ", (object)SqlParameterName.SessionId,
+         (object)SqlParameterName.LockDate);
+
+            NpgsqlConnection con = new NpgsqlConnection("Server = 127.0.0.1; User Id = postgres; Password=postgres;Database=sportsweb;");
+            con.Open();
+            //NpgsqlCommand cmd = new NpgsqlCommand(updatelock);
+            NpgsqlCommand cmd = new NpgsqlCommand(updateNoLock);
+            cmd.Connection = con;
+            cmd.Parameters.AddSessionIdParameter(SessionId1)
+                .AddLockDateParameter().AddLockDateLocalParameter();
+
+            var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                var sessionId2 = reader["sessionid"];
+                var str = (byte[])reader["sessionitemlong"];
+
+                MemoryStream str3 = new MemoryStream(str);
+                var obj2 = (ToCheck1)DeserializeFromStream(str3);
+
+            }
+
+            //(object)SqlParameterName.SessionId,
+
+
+        }
+
         static void InsertRecord(ToCheck1 obj)
         {
-            NpgsqlConnection con = new NpgsqlConnection("Server = 127.0.0.1; User Id = postgres; Password=postgres;Database=sportswebtest;");
+            NpgsqlConnection con = new NpgsqlConnection("Server = 127.0.0.1; User Id = postgres; Password=postgres;Database=sportsweb;");
             con.Open();
 
             string TempInsertUninitializedItemSql = string.Format(
@@ -228,6 +275,8 @@ namespace SampleProj1
             NpgsqlCommand.CommandText = str;
             return NpgsqlCommand;
         }
+
+
     }
 
     internal static class SqlParameterCollectionExtension

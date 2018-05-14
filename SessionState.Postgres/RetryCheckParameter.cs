@@ -4,12 +4,13 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Npgsql;
 
 namespace SessionState.Postgres
 {
     internal class RetryCheckParameter
     {
-        public SqlException Exception { get; set; }
+        public NpgsqlException Exception { get; set; }
 
         public DateTime EndRetryTime { get; set; }
 

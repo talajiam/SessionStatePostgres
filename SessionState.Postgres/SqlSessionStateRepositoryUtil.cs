@@ -26,7 +26,7 @@ namespace SessionState.Postgres
         private const int SQL_TIMEOUT_EXPIRED = -2;
         private const int APP_SUFFIX_LENGTH = 8;
 
-        
+
 
         public static async Task<int> SqlExecuteNonQueryWithRetryAsync(NpgsqlConnection connection, NpgsqlCommand sqlCmd, Func<RetryCheckParameter, bool> canRetry, bool ignoreInsertPKException = false)
         {
@@ -42,10 +42,10 @@ namespace SessionState.Postgres
                 await SqlSessionStateRepositoryUtil.OpenConnectionAsync(connection);
                 return (int)await sqlCmd.ExecuteNonQueryAsync();
             }
-            catch (SqlException ex)
+            catch (NpgsqlException ex)
             {
-                if (SqlSessionStateRepositoryUtil.IsInsertPKException(ex, ignoreInsertPKException))
-                    return -1;
+                //if (SqlSessionStateRepositoryUtil.IsInsertPKException(ex, ignoreInsertPKException))
+                //    return -1;
                 retryParamenter.Exception = ex;
                 if (!canRetry(retryParamenter))
                     throw;
@@ -54,7 +54,9 @@ namespace SessionState.Postgres
             }
         }
 
-        public static async Task<SqlDataReader> SqlExecuteReaderWithRetryAsync(NpgsqlConnection connection, NpgsqlCommand sqlCmd, Func<RetryCheckParameter, bool> canRetry, CommandBehavior cmdBehavior = CommandBehavior.Default)
+        public static async Task<NpgsqlDataReader> SqlExecuteReaderWithRetryAsync(NpgsqlConnection connection,
+            NpgsqlCommand sqlCmd,
+            Func<RetryCheckParameter, bool> canRetry, CommandBehavior cmdBehavior = CommandBehavior.Default)
         {
             RetryCheckParameter retryParamenter = new RetryCheckParameter()
             {
@@ -63,13 +65,13 @@ namespace SessionState.Postgres
             };
             sqlCmd.Connection = connection;
             label_1:
-            SqlDataReader sqlDataReader;
+            NpgsqlDataReader sqlDataReader;
             try
             {
                 await SqlSessionStateRepositoryUtil.OpenConnectionAsync(connection);
-                sqlDataReader = (SqlDataReader)await sqlCmd.ExecuteReaderAsync(cmdBehavior);
+                sqlDataReader = (NpgsqlDataReader)await sqlCmd.ExecuteReaderAsync(cmdBehavior);
             }
-            catch (SqlException ex)
+            catch (NpgsqlException ex)
             {
                 retryParamenter.Exception = ex;
                 if (!canRetry(retryParamenter))
@@ -111,10 +113,10 @@ namespace SessionState.Postgres
             }
         }
 
-        private static bool IsInsertPKException(SqlException ex, bool ignoreInsertPKException)
-        {
-            return ((ex == null ? 0 : (ex.Number == 2627 ? 1 : 0)) & (ignoreInsertPKException ? 1 : 0)) != 0;
-        }
+        //private static bool IsInsertPKException(NpgsqlException ex, bool ignoreInsertPKException)
+        //{
+        //    return ((ex == null ? 0 : (ex.Number == 2627 ? 1 : 0)) & (ignoreInsertPKException ? 1 : 0)) != 0;
+        //}
     }
 
 }
