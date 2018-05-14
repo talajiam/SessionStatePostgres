@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleProj1", "SampleProj1\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApplication1", "WebApplication1\WebApplication1.csproj", "{0C80E6E0-0BEB-469A-B282-436ECFE9CA22}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SessionState.Postgres.Test", "SessionState.Postgres.Test\SessionState.Postgres.Test.csproj", "{A710DBB6-1E90-44E3-8580-FC02A53B07C4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{0C80E6E0-0BEB-469A-B282-436ECFE9CA22}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C80E6E0-0BEB-469A-B282-436ECFE9CA22}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C80E6E0-0BEB-469A-B282-436ECFE9CA22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A710DBB6-1E90-44E3-8580-FC02A53B07C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A710DBB6-1E90-44E3-8580-FC02A53B07C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A710DBB6-1E90-44E3-8580-FC02A53B07C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A710DBB6-1E90-44E3-8580-FC02A53B07C4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
