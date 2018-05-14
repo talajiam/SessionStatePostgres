@@ -1,4 +1,4 @@
-﻿           CREATE TABLE ASPStateTempSessions (
+﻿           CREATE TABLE  IF NOT EXISTS ASPStateTempSessions (
                 SessionId           varchar(88)    NOT NULL PRIMARY KEY,
                 Created             timestamp      without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
                 Expires             timestamp        NOT NULL,

@@ -82,9 +82,10 @@ namespace SessionState.Postgres
             return sqlDataReader;
         }
 
-        public static bool IsFatalSqlException(SqlException ex)
+        public static bool IsFatalSqlException(NpgsqlException ex)
         {
-            return ex != null && ((int)ex.Class >= 20 || ex.Number == 4060 || ex.Number == -2);
+            //return ex != null && ((int)ex.Class >= 20 || ex.Number == 4060 || ex.Number == -2);
+            return true;
         }
 
         private static async Task OpenConnectionAsync(NpgsqlConnection NpgsqlConnection)

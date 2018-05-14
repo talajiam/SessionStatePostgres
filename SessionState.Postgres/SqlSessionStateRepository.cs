@@ -15,7 +15,20 @@ namespace SessionState.Postgres
 {
     internal class PostgresSessionStateRepository : IPostgresSessionStateRepository
     {
-        private static readonly string CreateSessionTableSql = string.Format("\r\n               IF NOT EXISTS (SELECT * \r\n                 FROM INFORMATION_SCHEMA.TABLES \r\n                 WHERE TABLE_NAME = '{0}')\r\n               BEGIN\r\n                CREATE TABLE {1} (\r\n                SessionId           nvarchar(88)    NOT NULL PRIMARY KEY,\r\n                Created             datetime        NOT NULL DEFAULT GETUTCDATE(),\r\n                Expires             datetime        NOT NULL,\r\n                LockDate            datetime        NOT NULL,\r\n                LockDateLocal       datetime        NOT NULL,\r\n                LockCookie          int             NOT NULL,\r\n                Timeout             int             NOT NULL,\r\n                Locked              bit             NOT NULL,\r\n                SessionItemLong     image           NULL,\r\n                Flags               int             NOT NULL DEFAULT 0,\r\n                ) \r\n                CREATE NONCLUSTERED INDEX Index_Expires ON {2} (Expires)\r\n            END", (object)SqlSessionStateRepositoryUtil.TableName, (object)SqlSessionStateRepositoryUtil.TableName, (object)SqlSessionStateRepositoryUtil.TableName);
+        private static readonly string CreateSessionTableSql =
+            " CREATE TABLE IF NOT EXISTS ASPStateTempSessions( \r\n " +
+            "   SessionId varchar(88)    NOT NULL PRIMARY KEY, \r\n " +
+            " Created             timestamp without time zone NOT NULL DEFAULT(now() at time zone 'utc'), \r\n " +
+            " Expires timestamp        NOT NULL, \r\n " +
+            "     LockDate            timestamp NOT NULL, \r\n " +
+            "  LockDateLocal timestamp        NOT NULL, \r\n " +
+            "      LockCookie          int NOT NULL,  \r\n " +
+            "   Timeout int NOT NULL, \r\n " +
+            "   Locked bit             NOT NULL, \r\n " +
+            "       SessionItemLong     BYTEA NULL,  \r\n " +
+            "       Flags               int NOT NULL DEFAULT 0   \r\n " +
+            "   )  \r\n ";
+        //string.Format("\r\n               IF NOT EXISTS (SELECT * \r\n                 FROM INFORMATION_SCHEMA.TABLES \r\n                 WHERE TABLE_NAME = '{0}')\r\n               BEGIN\r\n                CREATE TABLE {1} (\r\n                SessionId           nvarchar(88)    NOT NULL PRIMARY KEY,\r\n                Created             datetime        NOT NULL DEFAULT GETUTCDATE(),\r\n                Expires             datetime        NOT NULL,\r\n                LockDate            datetime        NOT NULL,\r\n                LockDateLocal       datetime        NOT NULL,\r\n                LockCookie          int             NOT NULL,\r\n                Timeout             int             NOT NULL,\r\n                Locked              bit             NOT NULL,\r\n                SessionItemLong     image           NULL,\r\n                Flags               int             NOT NULL DEFAULT 0,\r\n                ) \r\n                CREATE NONCLUSTERED INDEX Index_Expires ON {2} (Expires)\r\n            END", (object)SqlSessionStateRepositoryUtil.TableName, (object)SqlSessionStateRepositoryUtil.TableName, (object)SqlSessionStateRepositoryUtil.TableName);
 
         private static readonly string TempInsertUninitializedItemSql = string.Format(
                 "INSERT INTO {0}(SessionId, SessionItemLong, Timeout, Expires, Locked, LockDate, LockDateLocal, LockCookie, Flags)VALUES" +
@@ -31,7 +44,7 @@ namespace SessionState.Postgres
         private static readonly string GetStateItemExclusiveSql = string.Format(" begin; \r\n " +
                 " UPDATE ASPStateTempSessions set Expires = :{1} + (Timeout || ' minutes') :: interval,\r\n " +
              "   LockDate = CASE Locked WHEN 0 ::bit THEN :{1} ELSE LockDate  END,\r\n " +
-             " LockDateLocal = CASE Locked WHEN 0 ::bit THEN :{1} ELSE LockDateLocal END,\r\n " +
+             " LockDateLocal = CASE Locked WHEN 0 ::bit THEN :{2} ELSE LockDateLocal END,\r\n " +
              " LockCookie = CASE Locked WHEN 0 ::bit THEN LockCookie +1 ELSE LockCookie  END, \r\n " +
              " Locked = 1 :: bit, Flags = CASE  WHEN(Flags & 1) <> 0 THEN(Flags & ~1)   ELSE Flags  END \r\n " +
              " WHERE SessionId = :{0} ; \r\n " +
@@ -52,7 +65,7 @@ namespace SessionState.Postgres
 
         private static readonly string ReleaseItemExclusiveSql =
             string.Format(" UPDATE ASPStateTempSessions  \r\n " +
-           " SET Expires = :{1} + (Timeout || ' minutes') :: interval,    Locked = 0  \r\n" +
+           " SET Expires = :{1} + (Timeout || ' minutes') :: interval,    Locked = 0 ::bit \r\n" +
            " WHERE SessionId = @SessionId ", (object)SqlParameterName.SessionId, (object)SqlParameterName.LockDate);
         //string.Format("\r\n            UPDATE {0}\r\n            SET Expires = DATEADD(n, Timeout, GETUTCDATE()),\r\n                Locked = 0\r\n            WHERE SessionId = @{1} AND LockCookie = @{2}", (object)SqlSessionStateRepositoryUtil.TableName, (object)SqlParameterName.SessionId, (object)SqlParameterName.LockCookie);
 
@@ -62,15 +75,15 @@ namespace SessionState.Postgres
         //string.Format("\r\n            DELETE {0}\r\n            WHERE SessionId = @{1} AND LockCookie = @{2}", (object)SqlSessionStateRepositoryUtil.TableName, (object)SqlParameterName.SessionId, (object)SqlParameterName.LockCookie);
 
         private static readonly string ResetItemTimeoutSql = string.Format(" UPDATE ASPStateTempSessions " +
-        " SET Expires = Expires = :{1} + (Timeout || ' minutes') :: interval " +
+        " SET Expires = :{1} + (Timeout || ' minutes') :: interval " +
           "  WHERE SessionId = :{0} ", (object)SqlParameterName.SessionId, (object)SqlParameterName.LockDate);
         //string.Format("\r\n            UPDATE {0}\r\n            SET Expires = DATEADD(n, Timeout, GETUTCDATE())\r\n            WHERE SessionId = @{1}", (object)SqlSessionStateRepositoryUtil.TableName, (object)SqlParameterName.SessionId);
 
         private static readonly string UpdateStateItemLongSql = string.Format(" UPDATE ASPStateTempSessions " +
-           " SET Expires =Expires = :{1} + (:{2} || ' minutes') :: interval, " +
+           " SET Expires = :{1} + (:{2} || ' minutes') :: interval, " +
               "  SessionItemLong = :{3}, " +
               "  Timeout = :{2}, " +
-             "   Locked = 0 " +
+             "   Locked = 0 ::bit " +
           "  WHERE SessionId = :{0}  ",
             (object)SqlParameterName.SessionId,
             (object)SqlParameterName.LockDate,
@@ -79,11 +92,11 @@ namespace SessionState.Postgres
         //string.Format("\r\n            UPDATE {0} WITH (ROWLOCK)\r\n            SET Expires = DATEADD(n, @{1}, GETUTCDATE()), \r\n                SessionItemLong = @{2},\r\n                Timeout = @{3},\r\n                Locked = 0\r\n            WHERE SessionId = @{4} AND LockCookie = @{5}", (object)SqlSessionStateRepositoryUtil.TableName, (object)SqlParameterName.Timeout, (object)SqlParameterName.SessionItemLong, (object)SqlParameterName.Timeout, (object)SqlParameterName.SessionId, (object)SqlParameterName.LockCookie);
 
         private static readonly string InsertStateItemLongSql =
-             string.Format(" INSERT ASPStateTempSessions " +
+             string.Format(" INSERT INTO ASPStateTempSessions " +
               "  (SessionId, SessionItemLong, Timeout, Expires, Locked, LockDate, LockDateLocal, LockCookie) " +
            " VALUES(:{0} , :{1},  :{2}, " +
              "  :{3} + (:{2} || ' minutes') :: interval, " +
-             "    0, :{3}, :{4}, 1) ",
+             "    0 :: bit, :{3}, :{4}, 1) ",
                  (object)SqlParameterName.SessionId,
                  (object)SqlParameterName.SessionItemLong,
                  (object)SqlParameterName.Timeout,
@@ -165,10 +178,16 @@ namespace SessionState.Postgres
             {
                 NpgsqlDataReader reader = (NpgsqlDataReader)await SqlSessionStateRepositoryUtil.SqlExecuteReaderWithRetryAsync(connection, cmd,
                     new Func<RetryCheckParameter, bool>(this.CanRetry), CommandBehavior.Default);
+                int lockId = 0;
                 try
                 {
                     if (reader.ReadAsync().Result)
+                    {
                         buf = (byte[])reader["sessionitemlong"];
+                        actions = (SessionStateActions)reader["flags"];
+                        lockId = (int)reader["lockcookie"];
+                        //lockAge = 0;
+                    }
                 }
                 finally
                 {
@@ -176,21 +195,21 @@ namespace SessionState.Postgres
                         reader.Dispose();
                 }
                 reader = (NpgsqlDataReader)null;
-                NpgsqlParameter putParameterValue = cmd.GetOutPutParameterValue(SqlParameterName.Locked);
-                if (putParameterValue == null || Convert.IsDBNull(putParameterValue.Value))
-                    return (SessionItem)null;
-                int num = (bool)putParameterValue.Value ? 1 : 0;
-                object lockId = (object)(int)cmd.GetOutPutParameterValue(SqlParameterName.LockCookie).Value;
-                if (num != 0)
-                {
-                    lockAge = new TimeSpan(0, 0, (int)cmd.GetOutPutParameterValue(SqlParameterName.LockAge).Value);
-                    if (lockAge > new TimeSpan(0, 0, 31536000))
-                        lockAge = TimeSpan.Zero;
-                    return new SessionItem((byte[])null, true, lockAge, lockId, actions);
-                }
-                actions = (SessionStateActions)cmd.GetOutPutParameterValue(SqlParameterName.ActionFlags).Value;
-                if (buf == null)
-                    buf = (byte[])cmd.GetOutPutParameterValue(SqlParameterName.SessionItemLong).Value;
+                //  NpgsqlParameter putParameterValue = cmd.GetOutPutParameterValue(SqlParameterName.Locked);
+                //  if (putParameterValue == null || Convert.IsDBNull(putParameterValue.Value))
+                //      return (SessionItem)null;
+                //  int num = (bool)putParameterValue.Value ? 1 : 0;
+                ////  object lockId = (object)(int)cmd.GetOutPutParameterValue(SqlParameterName.LockCookie).Value;
+                //  if (num != 0)
+                //  {
+                //      lockAge = new TimeSpan(0, 0, (int)cmd.GetOutPutParameterValue(SqlParameterName.LockAge).Value);
+                //      if (lockAge > new TimeSpan(0, 0, 31536000))
+                //          lockAge = TimeSpan.Zero;
+                //      return new SessionItem((byte[])null, true, lockAge, lockId, actions);
+                //  }
+                //  actions = (SessionStateActions)cmd.GetOutPutParameterValue(SqlParameterName.ActionFlags).Value;
+                //  if (buf == null)
+                //      buf = (byte[])cmd.GetOutPutParameterValue(SqlParameterName.SessionItemLong).Value;
                 return new SessionItem(buf, true, lockAge, lockId, actions);
             }
         }
