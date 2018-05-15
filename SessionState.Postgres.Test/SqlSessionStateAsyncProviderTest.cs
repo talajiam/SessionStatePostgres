@@ -25,16 +25,16 @@ namespace SessionState.Postgres.Test
         private const string RetryIntervalConfigurationName = "RetryInterval";
         private const string DefaultTestConnectionString = "Server=myServerAddress;Database=myDataBase;User Id=myUsername;Password=myPassword;";
         private const string DefaultProviderName = "testprovider";
-        private const string TableName = "ASPStateTempSessions";
+        //      private const string TableName = "ASPStateTempSessions";
         private const string AppId = "TestWebsite";
         private const string TestSessionId = "piqhlifa30ooedcp1k42mtef";
-        private const int IdLength = 88;
+        //    private const int IdLength = 88;
         private const int TestTimeout = 10;
         private const int DefaultItemLength = 7000;
         private const int DefaultSqlCommandTimeout = 30;
         private const int DefaultRetryInterval = 1000;
         private const int DefaultRetryNum = 10;
-        private const int DefaultInMemoryTableRetryNum = 1;
+        //   private const int DefaultInMemoryTableRetryNum = 1;
 
         public SqlSessionStateAsyncProviderTest()
         {
@@ -49,10 +49,10 @@ namespace SessionState.Postgres.Test
                 createConnectionStringSettings());
 
             Assert.Equal(DefaultProviderName, provider.Name);
-            Assert.IsType<SqlSessionStateRepository>(provider.SqlSessionStateRepository);
+            Assert.IsType<PostgresSessionStateRepository>(provider.SqlSessionStateRepository);
             Assert.False(provider.CompressionEnabled);
 
-            var repo = (SqlSessionStateRepository)provider.SqlSessionStateRepository;
+            var repo = (PostgresSessionStateRepository)provider.SqlSessionStateRepository;
             Assert.Equal(DefaultTestConnectionString, repo.ConnectString);
             Assert.Equal(DefaultSqlCommandTimeout, repo.CommandTimeout);
             Assert.Equal(DefaultRetryInterval, repo.RetryIntervalMilSec);
@@ -68,52 +68,52 @@ namespace SessionState.Postgres.Test
                 createConnectionStringSettings());
 
             Assert.Equal(DefaultProviderName, provider.Name);
-            Assert.IsType<SqlSessionStateRepository>(provider.SqlSessionStateRepository);
+            Assert.IsType<PostgresSessionStateRepository>(provider.SqlSessionStateRepository);
             Assert.True(provider.CompressionEnabled);
 
-            var repo = (SqlSessionStateRepository)provider.SqlSessionStateRepository;
+            var repo = (PostgresSessionStateRepository)provider.SqlSessionStateRepository;
             Assert.Equal(DefaultTestConnectionString, repo.ConnectString);
             Assert.Equal(88, repo.CommandTimeout);
             Assert.Equal(99, repo.RetryIntervalMilSec);
             Assert.Equal(9, repo.MaxRetryNum);
         }
 
-        [Fact]
-        public void Initialize_With_InMemoryTableDefaultConfig_Should_Use_SqlInMemoryTableSessionStateRepository_With_DefaultSettings()
-        {
-            var provider = CreateProvider();
-            provider.Initialize(DefaultProviderName, CreateSessionStateProviderConfig(useInMemoryTable: "true"),
-                CreateSessionStateSection(), createConnectionStringSettings());
+        //[Fact]
+        //public void Initialize_With_InMemoryTableDefaultConfig_Should_Use_SqlInMemoryTableSessionStateRepository_With_DefaultSettings()
+        //{
+        //    var provider = CreateProvider();
+        //    provider.Initialize(DefaultProviderName, CreateSessionStateProviderConfig(useInMemoryTable: "true"),
+        //        CreateSessionStateSection(), createConnectionStringSettings());
 
-            Assert.Equal(DefaultProviderName, provider.Name);
-            Assert.IsType<SqlInMemoryTableSessionStateRepository>(provider.SqlSessionStateRepository);
-            Assert.False(provider.CompressionEnabled);
+        //    Assert.Equal(DefaultProviderName, provider.Name);
+        //    Assert.IsType<SqlInMemoryTableSessionStateRepository>(provider.SqlSessionStateRepository);
+        //    Assert.False(provider.CompressionEnabled);
 
-            var repo = (SqlInMemoryTableSessionStateRepository)provider.SqlSessionStateRepository;
-            Assert.Equal(DefaultTestConnectionString, repo.ConnectString);
-            Assert.Equal(DefaultSqlCommandTimeout, repo.CommandTimeout);
-            Assert.Equal(DefaultInMemoryTableRetryNum, repo.RetryIntervalMilSec);
-            Assert.Equal(DefaultRetryNum, repo.MaxRetryNum);
-        }
+        //    var repo = (SqlInMemoryTableSessionStateRepository)provider.SqlSessionStateRepository;
+        //    Assert.Equal(DefaultTestConnectionString, repo.ConnectString);
+        //    Assert.Equal(DefaultSqlCommandTimeout, repo.CommandTimeout);
+        //    Assert.Equal(DefaultInMemoryTableRetryNum, repo.RetryIntervalMilSec);
+        //    Assert.Equal(DefaultRetryNum, repo.MaxRetryNum);
+        //}
 
-        [Fact]
-        public void Initialize_With_SqlInMemoryTableSessionStateRepositorySettings_Should_Use_Configured_Settings()
-        {
-            var provider = CreateProvider();
-            provider.Initialize(DefaultProviderName, CreateSessionStateProviderConfig(useInMemoryTable: "true", retryInterval: "99", maxRetryNum: "9"),
-                CreateSessionStateSection(timeoutInSecond: 88, compressionEnabled: true),
-                createConnectionStringSettings());
+        //[Fact]
+        //public void Initialize_With_SqlInMemoryTableSessionStateRepositorySettings_Should_Use_Configured_Settings()
+        //{
+        //    var provider = CreateProvider();
+        //    provider.Initialize(DefaultProviderName, CreateSessionStateProviderConfig(useInMemoryTable: "true", retryInterval: "99", maxRetryNum: "9"),
+        //        CreateSessionStateSection(timeoutInSecond: 88, compressionEnabled: true),
+        //        createConnectionStringSettings());
 
-            Assert.Equal(DefaultProviderName, provider.Name);
-            Assert.IsType<SqlInMemoryTableSessionStateRepository>(provider.SqlSessionStateRepository);
-            Assert.True(provider.CompressionEnabled);
+        //    Assert.Equal(DefaultProviderName, provider.Name);
+        //    Assert.IsType<SqlInMemoryTableSessionStateRepository>(provider.SqlSessionStateRepository);
+        //    Assert.True(provider.CompressionEnabled);
 
-            var repo = (SqlInMemoryTableSessionStateRepository)provider.SqlSessionStateRepository;
-            Assert.Equal(DefaultTestConnectionString, repo.ConnectString);
-            Assert.Equal(88, repo.CommandTimeout);
-            Assert.Equal(99, repo.RetryIntervalMilSec);
-            Assert.Equal(9, repo.MaxRetryNum);
-        }
+        //    var repo = (SqlInMemoryTableSessionStateRepository)provider.SqlSessionStateRepository;
+        //    Assert.Equal(DefaultTestConnectionString, repo.ConnectString);
+        //    Assert.Equal(88, repo.CommandTimeout);
+        //    Assert.Equal(99, repo.RetryIntervalMilSec);
+        //    Assert.Equal(9, repo.MaxRetryNum);
+        //}
 
         [Fact]
         public void CreateNewStoreData_Should_Return_Empty_Store()
@@ -164,7 +164,7 @@ namespace SessionState.Postgres.Test
             provider.Initialize(DefaultProviderName, CreateSessionStateProviderConfig(), CreateSessionStateSection(),
                 createConnectionStringSettings());
 
-            var repoMoq = new Mock<ISqlSessionStateRepository>();
+            var repoMoq = new Mock<IPostgresSessionStateRepository>();
             string sessionId = "";
             int length = 0;
             byte[] buff = null;
@@ -202,7 +202,7 @@ namespace SessionState.Postgres.Test
             int length;
             SqlSessionStateProviderAsync.SerializeStoreData(data, DefaultItemLength, out buff, out length, false);
 
-            var repoMoq = new Mock<ISqlSessionStateRepository>();
+            var repoMoq = new Mock<IPostgresSessionStateRepository>();
             var ssItem = new SessionItem(buff, false, TimeSpan.Zero, null, action);
             repoMoq.Setup(repo => repo.GetSessionStateItemAsync(SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), false)).Returns(Task.FromResult(ssItem));
             provider.SqlSessionStateRepository = repoMoq.Object;
@@ -229,7 +229,7 @@ namespace SessionState.Postgres.Test
             provider.Initialize(DefaultProviderName, CreateSessionStateProviderConfig(), CreateSessionStateSection(),
                 createConnectionStringSettings());
 
-            var repoMoq = new Mock<ISqlSessionStateRepository>();
+            var repoMoq = new Mock<IPostgresSessionStateRepository>();
             var ssItem = new SessionItem(null, true, TimeSpan.FromSeconds(2), 1, SessionStateActions.None);
             repoMoq.Setup(repo => repo.GetSessionStateItemAsync(SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), false)).Returns(Task.FromResult(ssItem));
             provider.SqlSessionStateRepository = repoMoq.Object;
@@ -262,7 +262,7 @@ namespace SessionState.Postgres.Test
             int length;
             SqlSessionStateProviderAsync.SerializeStoreData(data, DefaultItemLength, out buff, out length, false);
 
-            var repoMoq = new Mock<ISqlSessionStateRepository>();
+            var repoMoq = new Mock<IPostgresSessionStateRepository>();
             var ssItem = new SessionItem(buff, true, TimeSpan.Zero, 1, SessionStateActions.None);
             repoMoq.Setup(repo => repo.GetSessionStateItemAsync(SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), true)).Returns(Task.FromResult(ssItem));
             provider.SqlSessionStateRepository = repoMoq.Object;
@@ -289,7 +289,7 @@ namespace SessionState.Postgres.Test
             provider.Initialize(DefaultProviderName, CreateSessionStateProviderConfig(), CreateSessionStateSection(),
                 createConnectionStringSettings());
 
-            var repoMoq = new Mock<ISqlSessionStateRepository>();
+            var repoMoq = new Mock<IPostgresSessionStateRepository>();
             var ssItem = new SessionItem(null, true, TimeSpan.FromSeconds(2), 1, SessionStateActions.None);
             repoMoq.Setup(repo => repo.GetSessionStateItemAsync(SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), true)).Returns(Task.FromResult(ssItem));
             provider.SqlSessionStateRepository = repoMoq.Object;
@@ -322,7 +322,7 @@ namespace SessionState.Postgres.Test
             int length;
             SqlSessionStateProviderAsync.SerializeStoreData(data, DefaultItemLength, out buff, out length, false);
 
-            var repoMoq = new Mock<ISqlSessionStateRepository>();
+            var repoMoq = new Mock<IPostgresSessionStateRepository>();
             var ssItem = new SessionItem(buff, true, TimeSpan.Zero, 1, SessionStateActions.None);
             repoMoq.Setup(repo => repo.GetSessionStateItemAsync(SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), false)).Returns(Task.FromResult(ssItem));
             provider.SqlSessionStateRepository = repoMoq.Object;
@@ -342,7 +342,7 @@ namespace SessionState.Postgres.Test
             provider.Initialize(DefaultProviderName, CreateSessionStateProviderConfig(), CreateSessionStateSection(),
                 createConnectionStringSettings());
 
-            var repoMoq = new Mock<ISqlSessionStateRepository>();
+            var repoMoq = new Mock<IPostgresSessionStateRepository>();
             var isLocked = true;
             repoMoq.Setup(repo => repo.ReleaseSessionItemAsync(SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), 1)).Returns(Task.CompletedTask)
                 .Callback(() => isLocked = false);
@@ -361,7 +361,7 @@ namespace SessionState.Postgres.Test
             provider.Initialize(DefaultProviderName, CreateSessionStateProviderConfig(), CreateSessionStateSection(),
                 createConnectionStringSettings());
 
-            var repoMoq = new Mock<ISqlSessionStateRepository>();
+            var repoMoq = new Mock<IPostgresSessionStateRepository>();
             var isRemoved = false;
             repoMoq.Setup(repo => repo.RemoveSessionItemAsync(SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), 1))
                 .Returns(Task.CompletedTask)
@@ -381,7 +381,7 @@ namespace SessionState.Postgres.Test
             provider.Initialize(DefaultProviderName, CreateSessionStateProviderConfig(), CreateSessionStateSection(),
                 createConnectionStringSettings());
 
-            var repoMoq = new Mock<ISqlSessionStateRepository>();
+            var repoMoq = new Mock<IPostgresSessionStateRepository>();
             var timeout = 100;
             repoMoq.Setup(repo => repo.ResetSessionItemTimeoutAsync(SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId)))
                 .Returns(Task.CompletedTask)
@@ -410,7 +410,7 @@ namespace SessionState.Postgres.Test
             int length;
             SqlSessionStateProviderAsync.SerializeStoreData(data, DefaultItemLength, out buff, out length, false);
 
-            var repoMoq = new Mock<ISqlSessionStateRepository>();
+            var repoMoq = new Mock<IPostgresSessionStateRepository>();
             var sessionItemCreated = false;
             repoMoq.Setup(repo => repo.CreateOrUpdateSessionStateItemAsync(true, SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId),
                                                                             buff, length, TestTimeout, 0, 0))
@@ -440,7 +440,7 @@ namespace SessionState.Postgres.Test
             int length;
             SqlSessionStateProviderAsync.SerializeStoreData(data, DefaultItemLength, out buff, out length, false);
 
-            var repoMoq = new Mock<ISqlSessionStateRepository>();
+            var repoMoq = new Mock<IPostgresSessionStateRepository>();
             var ssItem = new SessionItem(buff, false, TimeSpan.Zero, null, SessionStateActions.None);
             repoMoq.Setup(repo => repo.GetSessionStateItemAsync(SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), false))
                     .Returns(Task.FromResult(ssItem));
@@ -476,7 +476,7 @@ namespace SessionState.Postgres.Test
             int length;
             SqlSessionStateProviderAsync.SerializeStoreData(data, DefaultItemLength, out buff, out length, false);
 
-            var repoMoq = new Mock<ISqlSessionStateRepository>();
+            var repoMoq = new Mock<IPostgresSessionStateRepository>();
             var ssItem = new SessionItem(buff, true, TimeSpan.Zero, 1, SessionStateActions.None);
             repoMoq.Setup(repo => repo.GetSessionStateItemAsync(SqlSessionStateProviderAsync.AppendAppIdHash(TestSessionId), true))
                 .Returns(Task.FromResult(ssItem));

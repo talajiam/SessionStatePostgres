@@ -115,6 +115,28 @@ namespace SessionState.Postgres
         private int _maxRetryNum;
         private NpgsqlCommandHelper _commandHelper;
 
+        #region properties/methods for unit tests
+        internal int RetryIntervalMilSec
+        {
+            get { return _retryIntervalMilSec; }
+        }
+
+        internal string ConnectString
+        {
+            get { return _connectString; }
+        }
+
+        internal int MaxRetryNum
+        {
+            get { return _maxRetryNum; }
+        }
+
+        internal int CommandTimeout
+        {
+            get { return this._commandHelper.CommandTimeout; }
+        }
+        #endregion
+
         public PostgresSessionStateRepository(string connectionString, int commandTimeout, int? retryInterval = 1000, int? retryNum = 10)
         {
             this._retryIntervalMilSec = retryInterval.HasValue ? retryInterval.Value : 1000;

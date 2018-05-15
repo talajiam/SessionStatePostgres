@@ -12,6 +12,13 @@ namespace SessionState.Postgres
     internal class NpgsqlCommandHelper
     {
         private int _commandTimeout;
+      
+        #region property for unit tests
+        internal int CommandTimeout
+        {
+            get { return _commandTimeout; }
+        }
+        #endregion
 
         public NpgsqlCommandHelper(int commandTimeout)
         {
